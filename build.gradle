@@ -1,0 +1,37 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:2.0.5.RELEASE")
+    }
+}
+
+apply plugin: 'java'
+apply plugin: 'idea'
+apply plugin: 'org.springframework.boot'
+apply plugin: 'io.spring.dependency-management'
+
+bootJar {
+    baseName = 'todo-rest'
+    version =  '0.1.0'
+}
+
+repositories {
+    mavenCentral()
+}
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+dependencies {
+    compile("org.springframework.boot:spring-boot-starter-web")
+    compile("org.springframework.boot:spring-boot-starter-data-jpa")
+    compile group: 'com.google.guava', name: 'guava', version: '23.5-jre'
+    compile group: 'javax.xml.bind', name: 'jaxb-api', version: '2.3.0'
+    compile group: 'org.modelmapper', name: 'modelmapper', version: '0.7.4'
+    compile("com.h2database:h2")
+    testCompile('org.springframework.boot:spring-boot-starter-test')
+    testCompile('com.jayway.jsonpath:json-path')
+}
+
