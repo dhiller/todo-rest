@@ -34,9 +34,12 @@ $ java -jar build/libs/todo-rest-0.1.0.jar
 
 ## Example usage
 
-A test script demonstrating how to use the service with [curl](https://curl.haxx.se/) is provided [here](src/test/scripts/test.sh).
+After running the service a live ui containing an overview of provided methods and for trying out the service
+is visible [here](http://localhost:8080/swagger-ui.html). This is provided using [Swagger](https://swagger.io/). 
 
-Prior to execution, one should run the `mockserver` to see the notification request:
+A bash script demonstrating how to use the service with [curl](https://curl.haxx.se/) is provided 
+[here](src/test/scripts/test.sh). Prior to execution, one should run the `mockserver` to see the 
+watch callbacks (see below):
 
 ```bash
 mockserver -serverPort 8081

@@ -27,12 +27,20 @@ targetCompatibility = 11
 dependencies {
     compile("org.springframework.boot:spring-boot-starter-web")
     compile("org.springframework.boot:spring-boot-starter-data-jpa")
+
     compile group: 'com.google.guava', name: 'guava', version: '23.5-jre'
+    // has been removed since java 9
     compile group: 'javax.xml.bind', name: 'jaxb-api', version: '2.3.0'
     compile group: 'org.modelmapper', name: 'modelmapper', version: '0.7.4'
     compile("com.h2database:h2")
+
     // workaround for java 11, see https://github.com/spring-projects/spring-boot/issues/14610
     compile 'org.javassist:javassist:3.23.1-GA'
+
+    // swagger
+    compile 'io.springfox:springfox-swagger2:2.9.2'
+    compile 'io.springfox:springfox-swagger-ui:2.9.2'
+
     testCompile 'org.mock-server:mockserver-netty:5.5.0'
     testCompile('org.springframework.boot:spring-boot-starter-test')
     testCompile('com.jayway.jsonpath:json-path')

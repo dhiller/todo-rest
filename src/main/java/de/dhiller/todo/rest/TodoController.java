@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.dhiller.todo.persistence.*;
+import io.swagger.annotations.*;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -75,9 +76,17 @@ public class TodoController {
             })
             .build();
 
+    @ApiOperation(value="Returns a list of todo items for the authenticated user.")
+    @ApiResponses({
+            @ApiResponse(code = 200, message = "The list of todo items for the current user (possibly filtered).", response = TodoDTO.class, responseContainer = "List"),
+            @ApiResponse(code = 401, message = "The token is not authorized to access this resource.")
+    })
     @GetMapping("/todos")
-    public List<TodoDTO> listTodos(@RequestParam(value = "auth", required = false) String token,
-                                   @RequestBody(required = false) TodoDTO filter) {
+    public List<TodoDTO> listTodos(
+            @ApiParam(value="The access token")
+            @RequestParam(value = "auth", required = false) String token,
+            @ApiParam(value="The item filter comprising of a todo item, i.e. {\"id\":null,\"done\":null,\"content\":\".*kitchen.*\"}")
+            @RequestBody(required = false) TodoDTO filter) {
         Pattern filterPattern = ofNullable(filter).filter(f -> f.getContent() != null)
                 .map(f -> Pattern.compile(f.getContent()))
                 .orElse(MATCH_ALL_PATTERN);
@@ -88,10 +97,22 @@ public class TodoController {
                 .collect(Collectors.toList());
     }
 
+    @ApiOperation(
+            value="Updates a todo item for the authenticated user.",
+            response = List.class)
+    @ApiResponses({
+            @ApiResponse(code = 200, message = "If the update has succeeded"),
+            @ApiResponse(code = 401, message = "The token is not authorized to access this resource"),
+            @ApiResponse(code = 404, message = "The todo item has not been found")
+    })
     @PostMapping("/todos/{id}")
-    public void updateTodo(@RequestParam(value = "auth", required = false) String token,
-                           @PathVariable(value = "id") long id,
-                           @RequestBody TodoDTO update) {
+    public void updateTodo(
+            @ApiParam(value = "The access token")
+            @RequestParam(value = "auth", required = false) String token,
+            @ApiParam(value = "The id of the item to update")
+            @PathVariable(value = "id") long id,
+            @ApiParam(value = "The updated item as json")
+            @RequestBody TodoDTO update) {
         final User authorizedUser = authenticationProvider.authorize(token);
         Todo todoToUpdate = getTodoByIdOrThrowNotFound(id);
         if (!authorizedUser.equals(todoToUpdate.getUser()))
@@ -103,9 +124,17 @@ public class TodoController {
         notifyUpdateReceivers(authorizedUser, afterUpdate);
     }
 
+    @ApiOperation(value="Creates a todo item for the authenticated user.")
+    @ApiResponses({
+            @ApiResponse(code = 200, message = "If the creation has succeeded", response = TodoDTO.class),
+            @ApiResponse(code = 401, message = "The token is not authorized to access this resource")
+    })
     @PutMapping("/todos")
-    public TodoDTO insertTodo(@RequestParam(value = "auth", required = false) String token,
-                              @RequestBody TodoDTO update) {
+    public TodoDTO insertTodo(
+            @ApiParam(value = "The access token")
+            @RequestParam(value = "auth", required = false) String token,
+            @ApiParam(value = "The new item as json")
+            @RequestBody TodoDTO update) {
         final User authorizedUser = authenticationProvider.authorize(token);
         Todo todoToInsert = modelMapper.map(update, Todo.class);
         todoToInsert.setUser(authorizedUser);
@@ -115,9 +144,18 @@ public class TodoController {
         return afterInsert;
     }
 
+    @ApiOperation(value="Deletes a todo item for the authenticated user.")
+    @ApiResponses({
+            @ApiResponse(code = 200, message = "If the deletion has succeeded"),
+            @ApiResponse(code = 401, message = "The token is not authorized to access this resource"),
+            @ApiResponse(code = 404, message = "The todo item has not been found")
+    })
     @DeleteMapping("/todos/{id}")
-    public void deleteTodo(@RequestParam(value = "auth", required = false) String token,
-                           @PathVariable(value = "id") long id) {
+    public void deleteTodo(
+            @ApiParam(value = "The access token")
+            @RequestParam(value = "auth", required = false) String token,
+            @ApiParam(value = "The id of the item to delete")
+            @PathVariable(value = "id") long id) {
         final User authorizedUser = authenticationProvider.authorize(token);
         Todo todoToUpdate = getTodoByIdOrThrowNotFound(id);
         if (!authorizedUser.equals(todoToUpdate.getUser()))
@@ -144,6 +182,12 @@ public class TodoController {
         };
     }
 
+    @ApiOperation(value="Returns a single todo item for the authenticated user.")
+    @ApiResponses({
+            @ApiResponse(code = 200, message = "The todo item for the current user", response = TodoDTO.class),
+            @ApiResponse(code = 401, message = "The token is not authorized to access this resource"),
+            @ApiResponse(code = 404, message = "The todo item has not been found")
+    })
     @GetMapping("/todos/{id}")
     public TodoDTO getTodo(@RequestParam(value = "auth", required = false) String token,
                            @PathVariable(value = "id") long id) {
