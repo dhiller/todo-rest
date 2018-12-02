@@ -7,13 +7,6 @@
     * [java development kit](https://www.oracle.com/technetwork/java/javase/downloads/jdk11-downloads-5066655.html) 
 * [curl](https://curl.haxx.se/) for using the test script (see below)
 
-## Caveats
-
-### Transport encryption missing
-
-The service does **NOT** provide encryption over the wire, this must be done on the reverse
-proxy level.
-
 ## How to run the service
 
 From the command line execute
@@ -42,3 +35,14 @@ Providing the token the client can now request the list of todo items:
 Supplying a filter object the client can request only items matching content:
 
     > curl -v -H'Content-Type: application/json' -XGET -d '{"id":null,"done":null,"content":".*kitchen.*"}' 'http://localhost:8080/todos?auth=53483c8a-6c38-4e2f-b96f-4a8eb0e1cfe4'
+
+## Caveats
+
+### Transport encryption missing
+
+The service does **NOT** provide encryption over the wire, this must be done on the reverse
+proxy level.
+
+### Authentication tokens never expire
+
+Although authentication tokens are not persisted, they do **never expire** as long as the service is running.
