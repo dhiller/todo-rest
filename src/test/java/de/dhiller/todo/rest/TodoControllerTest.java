@@ -22,15 +22,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import javax.transaction.Transactional;
 
-@RunWith(SpringRunner.class)
-@SpringBootTest
-@AutoConfigureMockMvc
-public class TodoControllerTest {
-
-    @Autowired
-    private MockMvc mockMvc;
-
-    private ObjectMapper objectMapper = new ObjectMapper();
+public class TodoControllerTest extends ControllerTestBase {
 
     private String authenticationToken;
     private String otherAuthenticationToken;
@@ -127,14 +119,6 @@ public class TodoControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content").value("Clean up the kitchen (finished)"))
                 .andExpect(jsonPath("$.done").value("true"));
-    }
-
-    private String authenticate(String username, String password) throws Exception {
-        return this.mockMvc.perform(
-                post("/authenticate")
-                        .param("username", username).param("password", password))
-                .andExpect(status().isOk())
-                .andReturn().getResponse().getContentAsString();
     }
 
 }
