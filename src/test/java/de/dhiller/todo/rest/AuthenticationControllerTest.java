@@ -17,8 +17,15 @@ public class AuthenticationControllerTest extends ControllerTestBase {
     private MockMvc mockMvc;
 
     @Test
-    public void authenticationFails() throws Exception {
+    public void authenticationFailsForUserNotFound() throws Exception {
         performAuthentication("jdee", "mys3cr3t")
+                .andDo(print())
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    public void authenticationFailsForWrongPassword() throws Exception {
+        performAuthentication("jdoe", "mys3cr0t")
                 .andDo(print())
                 .andExpect(status().isForbidden());
     }
