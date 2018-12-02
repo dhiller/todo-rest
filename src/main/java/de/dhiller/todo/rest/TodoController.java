@@ -1,8 +1,14 @@
 package de.dhiller.todo.rest;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -13,7 +19,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.DefaultResponseErrorHandler;
+import org.springframework.web.client.ResponseErrorHandler;
 import org.springframework.web.client.RestTemplate;
 
 import static java.util.Optional.ofNullable;
@@ -27,6 +36,8 @@ public class TodoController {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
+
     @Autowired
     private ModelMapper modelMapper;
 
@@ -39,7 +50,12 @@ public class TodoController {
     @Autowired
     private UpdateReceiverRepository updateReceiverRepository;
 
-    private RestTemplate restTemplate = new RestTemplateBuilder().setConnectTimeout(10000).build();
+    @Autowired
+    private RestTemplateBuilder restTemplateBuilder;
+//            = new RestTemplateBuilder()
+//            .setConnectTimeout(3000)
+//            .errorHandler(new DefaultResponseErrorHandler())
+//            .build();
 
     @GetMapping("/todos")
     public List<TodoDTO> listTodos(@RequestParam(value = "auth", required = false) String token,
@@ -66,11 +82,17 @@ public class TodoController {
         todoToUpdate.setDone(update.isDone());
         final TodoDTO afterUpdate = modelMapper.map(todoToUpdate, TodoDTO.class);
         todoRepository.save(todoToUpdate);
-        new Thread(() -> {
-            updateReceiverRepository.findByUser(authorizedUser).forEach(
-                   updateReceiver -> restTemplate.put(updateReceiver.getEndpoint(), afterUpdate)
-            );
-        }).run();
+        notifyUpdateReceivers(authorizedUser, afterUpdate);
+    }
+
+    private void notifyUpdateReceivers(User authorizedUser, TodoDTO afterUpdate) {
+        updateReceiverRepository.findByUser(authorizedUser).stream()
+                .map(e -> callEndpoint(e, afterUpdate))
+                .forEach(executor::submit);
+    }
+
+    private Runnable callEndpoint(final UpdateReceiver e, final TodoDTO afterUpdate) {
+        return () -> restTemplateBuilder.build().put(e.getEndpoint(), afterUpdate);
     }
 
     @GetMapping("/todos/{id}")
