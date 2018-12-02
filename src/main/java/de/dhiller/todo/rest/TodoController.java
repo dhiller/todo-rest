@@ -5,7 +5,9 @@ import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import de.dhiller.todo.persistence.Todo;
 import de.dhiller.todo.persistence.TodoRepository;
+import de.dhiller.todo.persistence.User;
 import de.dhiller.todo.persistence.UserRepository;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
@@ -32,7 +34,6 @@ public class TodoController {
     private TodoRepository todoRepository;
 
     @GetMapping("/todos")
-    @ResponseBody
     public List<TodoDTO> listTodos(@RequestParam(value = "auth", required = false) String token,
                                    @RequestBody(required = false) TodoDTO filter) {
         Pattern filterPattern = ofNullable(filter).filter(f -> f.getContent() != null)
@@ -44,4 +45,32 @@ public class TodoController {
                 .map(t -> modelMapper.map(t, TodoDTO.class))
                 .collect(Collectors.toList());
     }
+
+    @PostMapping("/todos/{id}")
+    public void updateTodo(@RequestParam(value = "auth", required = false) String token,
+                           @PathVariable(value="id") long id,
+                           @RequestBody(required = false) TodoDTO update) {
+        User authorizedUser = authenticationProvider.authorize(token);
+        Todo todoToUpdate = getTodoByIdOrThrowNotFound(id);
+        if(!authorizedUser.equals(todoToUpdate.getUser()))
+            throw new TodoNotFoundException();
+        todoToUpdate.setContent(update.getContent());
+        todoToUpdate.setDone(update.isDone());
+        todoRepository.save(todoToUpdate);
+    }
+
+    @GetMapping("/todos/{id}")
+    public TodoDTO getTodo(@RequestParam(value = "auth", required = false) String token,
+                           @PathVariable(value="id") long id) {
+        User authorizedUser = authenticationProvider.authorize(token);
+        Todo todoToUpdate = getTodoByIdOrThrowNotFound(id);
+        if(!authorizedUser.equals(todoToUpdate.getUser()))
+            throw new TodoNotFoundException();
+        return modelMapper.map(todoToUpdate, TodoDTO.class);
+    }
+
+    private Todo getTodoByIdOrThrowNotFound(long id) {
+        return todoRepository.findById(id).orElseThrow(TodoNotFoundException::new);
+    }
+
 }

@@ -8,6 +8,11 @@ public class TodoDTO {
 
     public TodoDTO() {}
 
+    public TodoDTO(Boolean done, String content) {
+        this.done = done;
+        this.content = content;
+    }
+
     public Long getId() {
         return id;
     }

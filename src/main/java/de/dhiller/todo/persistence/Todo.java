@@ -27,6 +27,10 @@ public class Todo {
         this.id = id;
     }
 
+    public User getUser() {
+        return user;
+    }
+
     public String getContent() {
         return content;
     }
