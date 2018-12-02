@@ -1,24 +1,18 @@
 package de.dhiller.todo.rest;
 
+import static net.bytebuddy.matcher.ElementMatchers.is;
+import static org.hamcrest.core.IsNull.notNullValue;
 import static org.mockserver.model.HttpRequest.request;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.mockserver.client.MockServerClient;
-import org.mockserver.junit.MockServerRule;
-import org.mockserver.model.HttpRequest;
-import org.mockserver.model.HttpResponse;
-import org.mockserver.verify.VerificationTimes;
 import org.springframework.http.MediaType;
 
 import javax.transaction.Transactional;
-import java.net.URI;
 
 public class TodoControllerTest extends ControllerTestBase {
 
@@ -111,6 +105,46 @@ public class TodoControllerTest extends ControllerTestBase {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content").value("Clean up the kitchen (finished)"))
                 .andExpect(jsonPath("$.done").value("true"));
+    }
+
+    @Test
+    @Transactional
+    public void insertItem() throws Exception {
+        this.mockMvc.perform(get("/todos").param("auth", authenticationToken)).andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value("3"));
+
+        String newItemAsString = this.mockMvc.perform(
+                put("/todos")
+                        .param("auth", this.authenticationToken)
+                        .content(objectMapper.writeValueAsString(new TodoDTO(false, "Mow the lawn")))
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        TodoDTO newItem = objectMapper.readValue(newItemAsString, TodoDTO.class);
+
+        this.mockMvc.perform(
+                get("/todos/" + newItem.getId()).param("auth", authenticationToken))
+                .andExpect(status().isOk());
+
+        this.mockMvc.perform(get("/todos").param("auth", authenticationToken)).andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value("4"));
+    }
+
+    @Test
+    @Transactional
+    public void deleteItem() throws Exception {
+        this.mockMvc.perform(
+                delete("/todos/1")
+                        .param("auth", this.authenticationToken))
+                .andDo(print())
+                .andExpect(status().isOk());
+
+        this.mockMvc.perform(
+                get("/todos/1").param("auth", authenticationToken))
+                .andExpect(status().isNotFound());
     }
 
 }

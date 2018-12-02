@@ -3,10 +3,11 @@ package de.dhiller.todo.persistence;
 import javax.persistence.*;
 
 @Entity
+@TableGenerator(name="userIds", initialValue=10, allocationSize=10)
 public class User {
 
     @Id
-    @GeneratedValue(strategy=GenerationType.AUTO)
+    @GeneratedValue(strategy=GenerationType.TABLE, generator = "userIds")
     private Long id;
 
     @Column(unique = true)

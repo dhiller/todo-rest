@@ -2,14 +2,9 @@ package de.dhiller.todo.rest;
 
 import java.io.IOException;
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -96,7 +91,7 @@ public class TodoController {
     @PostMapping("/todos/{id}")
     public void updateTodo(@RequestParam(value = "auth", required = false) String token,
                            @PathVariable(value = "id") long id,
-                           @RequestBody(required = false) TodoDTO update) {
+                           @RequestBody TodoDTO update) {
         final User authorizedUser = authenticationProvider.authorize(token);
         Todo todoToUpdate = getTodoByIdOrThrowNotFound(id);
         if (!authorizedUser.equals(todoToUpdate.getUser()))
@@ -105,6 +100,30 @@ public class TodoController {
         todoToUpdate.setDone(update.isDone());
         final TodoDTO afterUpdate = modelMapper.map(todoToUpdate, TodoDTO.class);
         todoRepository.save(todoToUpdate);
+        notifyUpdateReceivers(authorizedUser, afterUpdate);
+    }
+
+    @PutMapping("/todos")
+    public TodoDTO insertTodo(@RequestParam(value = "auth", required = false) String token,
+                              @RequestBody TodoDTO update) {
+        final User authorizedUser = authenticationProvider.authorize(token);
+        Todo todoToInsert = modelMapper.map(update, Todo.class);
+        todoToInsert.setUser(authorizedUser);
+        todoRepository.save(todoToInsert);
+        final TodoDTO afterInsert = modelMapper.map(todoToInsert, TodoDTO.class);
+        notifyUpdateReceivers(authorizedUser, afterInsert);
+        return afterInsert;
+    }
+
+    @DeleteMapping("/todos/{id}")
+    public void deleteTodo(@RequestParam(value = "auth", required = false) String token,
+                           @PathVariable(value = "id") long id) {
+        final User authorizedUser = authenticationProvider.authorize(token);
+        Todo todoToUpdate = getTodoByIdOrThrowNotFound(id);
+        if (!authorizedUser.equals(todoToUpdate.getUser()))
+            throw new TodoNotFoundException();
+        final TodoDTO afterUpdate = modelMapper.map(todoToUpdate, TodoDTO.class);
+        todoRepository.delete(todoToUpdate);
         notifyUpdateReceivers(authorizedUser, afterUpdate);
     }
 

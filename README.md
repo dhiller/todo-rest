@@ -48,8 +48,19 @@ In general a client first has to authenticate against the service, after which s
 token that must be provided to any endpoint provided.
 
 ```bash
-$ curl -d '' 'http://localhost:8080/authenticate?username=jdoe&password=mys3cr3t'
+$ TOKEN=$(curl -d '' 'http://localhost:8080/authenticate?username=jdoe&password=mys3cr3t')
 53483c8a-6c38-4e2f-b96f-4a8eb0e1cfe4
+```
+
+### Add a remote watch
+
+To be notified of changes for it's own todo items, a client can register a callback url that will be called, should
+a todo item be changed.
+
+```bash
+curl -s -XPUT -d '{"endpoint":"http://localhost:8081/todoItemUpdate"}' \
+    -H 'Content-Type: application/json' \
+    "http://localhost:8080/updates?auth=$TOKEN"
 ```
 
 ### Request todo list
@@ -57,21 +68,25 @@ $ curl -d '' 'http://localhost:8080/authenticate?username=jdoe&password=mys3cr3t
 Providing the token the client can now request the list of todo items:
 
 ```bash
-$ curl 'http://localhost:8080/todos?auth=53483c8a-6c38-4e2f-b96f-4a8eb0e1cfe4'
+$ curl "http://localhost:8080/todos?auth=$TOKEN"
 [{"id":1,"done":false,"content":"Clean up the kitchen"},{"id":2,"done":false,"content":"Empty trashcan"},{"id":3,"done":true,"content":"Buy milk"}]
 ```
     
 Supplying a filter object the client can request only items matching content:
 
 ```bash
-$ curl -v -H'Content-Type: application/json' -XGET \
+$ curl -H'Content-Type: application/json' -XGET \
     -d '{"id":null,"done":null,"content":".*kitchen.*"}' \
-    'http://localhost:8080/todos?auth=53483c8a-6c38-4e2f-b96f-4a8eb0e1cfe4'
+    "http://localhost:8080/todos?auth=$TOKEN"
 ```
+
+### Insert, update and delete
+
+Respective examples are provided in [test.sh](src/test/scripts/test.sh).
 
 ## Caveats
 
-### Transport encryption missing
+### Transport not encrypted
 
 The service does **NOT** provide encryption over the wire, this must be done on the reverse
 proxy level.

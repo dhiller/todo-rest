@@ -3,10 +3,11 @@ package de.dhiller.todo.persistence;
 import javax.persistence.*;
 
 @Entity
+@TableGenerator(name="todoIds", initialValue=10, allocationSize=10)
 public class Todo {
 
     @Id
-    @GeneratedValue(strategy=GenerationType.AUTO)
+    @GeneratedValue(strategy=GenerationType.TABLE, generator = "todoIds")
     private Long id;
 
     @ManyToOne
@@ -29,6 +30,10 @@ public class Todo {
 
     public User getUser() {
         return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
     }
 
     public String getContent() {
