@@ -57,7 +57,7 @@ $ TOKEN=$(curl -d '' 'http://localhost:8080/authenticate?username=jdoe&password=
 
 ### Add a remote watch
 
-To be notified of changes for it's own todo items, a client can register a callback url that will be called, should
+To be notified of changes for own todo items, a client can register a callback url that will be called, should
 a todo item be changed.
 
 ```bash
@@ -65,6 +65,17 @@ curl -s -XPUT -d '{"endpoint":"http://localhost:8081/todoItemUpdate"}' \
     -H 'Content-Type: application/json' \
     "http://localhost:8080/updates?auth=$TOKEN"
 ```
+
+The service will then PUT updates against the registered update endpoint transmitting the new state, which would be 
+equivalent to this curl request:
+
+```bash
+curl -s -XPUT -d '{"updated":{"id":1,"done":true,"content":"Clean up the kitchen (finished)"},"method":"POST","timestamp":[2018,12,2,22,24,26,807945000]}' \
+    -H 'Content-Type: application/json' \
+    "http://localhost:8081/todoItemUpdate"
+``` 
+
+In case of error the PUT will **not be retried**!
 
 ### Request todo list
 

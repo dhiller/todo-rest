@@ -2,12 +2,14 @@ package de.dhiller.todo.rest;
 
 import java.io.IOException;
 import java.net.URI;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.dhiller.todo.persistence.*;
 import io.swagger.annotations.*;
@@ -121,7 +123,7 @@ public class TodoController {
         todoToUpdate.setDone(update.isDone());
         final TodoDTO afterUpdate = modelMapper.map(todoToUpdate, TodoDTO.class);
         todoRepository.save(todoToUpdate);
-        notifyUpdateReceivers(authorizedUser, afterUpdate);
+        notifyUpdateReceivers(HttpMethod.POST, authorizedUser, afterUpdate);
     }
 
     @ApiOperation(value="Creates a todo item for the authenticated user.")
@@ -140,7 +142,7 @@ public class TodoController {
         todoToInsert.setUser(authorizedUser);
         todoRepository.save(todoToInsert);
         final TodoDTO afterInsert = modelMapper.map(todoToInsert, TodoDTO.class);
-        notifyUpdateReceivers(authorizedUser, afterInsert);
+        notifyUpdateReceivers(HttpMethod.PUT, authorizedUser, afterInsert);
         return afterInsert;
     }
 
@@ -162,24 +164,15 @@ public class TodoController {
             throw new TodoNotFoundException();
         final TodoDTO afterUpdate = modelMapper.map(todoToUpdate, TodoDTO.class);
         todoRepository.delete(todoToUpdate);
-        notifyUpdateReceivers(authorizedUser, afterUpdate);
+        notifyUpdateReceivers(HttpMethod.DELETE, authorizedUser, afterUpdate);
     }
 
-    private void notifyUpdateReceivers(User authorizedUser, TodoDTO afterUpdate) {
+    private void notifyUpdateReceivers(HttpMethod method, User authorizedUser, TodoDTO afterUpdate) {
+        final LocalDateTime now = LocalDateTime.now();
         updateReceiverRepository.findByUser(authorizedUser).stream()
-                .map(e -> callEndpoint(e, afterUpdate))
+                .map(e -> new TodoUpdate(restTemplate, e, afterUpdate, method, now))
+                .map(TodoUpdate::callEndpoint)
                 .forEach(executor::submit);
-    }
-
-    private Runnable callEndpoint(final UpdateReceiver updateReceiver, final TodoDTO afterUpdate) {
-        return () -> {
-            try {
-                restTemplate.put(updateReceiver.getEndpoint(), afterUpdate);
-            } catch (Exception ex) {
-                log.error("error while trying to notify remote", ex);
-                throw new RuntimeException(ex);
-            }
-        };
     }
 
     @ApiOperation(value="Returns a single todo item for the authenticated user.")
@@ -200,6 +193,47 @@ public class TodoController {
 
     private Todo getTodoByIdOrThrowNotFound(long id) {
         return todoRepository.findById(id).orElseThrow(TodoNotFoundException::new);
+    }
+
+    @JsonIgnoreProperties(value = { "restTemplate", "updateReceiver" })
+    private static final class TodoUpdate {
+        private final RestTemplate restTemplate;
+        private final UpdateReceiver updateReceiver;
+        private final TodoDTO updated;
+        private final HttpMethod method;
+        private final LocalDateTime timestamp;
+
+        public TodoUpdate(RestTemplate restTemplate, UpdateReceiver updateReceiver, TodoDTO updated, HttpMethod method,
+                          LocalDateTime timestamp) {
+            this.updateReceiver = updateReceiver;
+            this.updated = updated;
+            this.method = method;
+            this.restTemplate = restTemplate;
+            this.timestamp = timestamp;
+        }
+
+        public TodoDTO getUpdated() {
+            return updated;
+        }
+
+        public HttpMethod getMethod() {
+            return method;
+        }
+
+        public LocalDateTime getTimestamp() {
+            return timestamp;
+        }
+
+        private Runnable callEndpoint() {
+            return () -> {
+                try {
+                    restTemplate.put(updateReceiver.getEndpoint(), this);
+                } catch (Exception ex) {
+                    log.error("error while trying to notify remote", ex);
+                    throw new RuntimeException(ex);
+                }
+            };
+        }
     }
 
 }
