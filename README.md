@@ -1,4 +1,4 @@
-# TODO list example
+# TODO REST service example
 
 ## Requirements
 
