@@ -7,9 +7,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -24,6 +26,9 @@ public class TodoControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    private ObjectMapper objectMapper = new ObjectMapper();
+
     private String authenticationToken;
 
     @Before
@@ -44,6 +49,21 @@ public class TodoControllerTest {
         this.mockMvc.perform(get("/todos").param("auth", authenticationToken)).andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.[0].content").value("Clean up the kitchen"));
+    }
+
+    @Test
+    public void shouldReturnFilteredList() throws Exception {
+        final TodoDTO todo = new TodoDTO();
+        todo.setContent(".*kitchen.*");
+        this.mockMvc.perform(
+                get("/todos")
+                        .param("auth", authenticationToken)
+                        .content(objectMapper.writeValueAsString(todo))
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.[0].content").value("Clean up the kitchen"))
+                .andExpect(jsonPath("$.length()").value(1));
     }
 
 }

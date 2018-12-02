@@ -1,0 +1,9 @@
+logging:
+  level:
+    de.dhiller.todo: DEBUG
+---
+spring:
+  profiles: production
+logging:
+  level:
+    de.dhiller.todo: WARN

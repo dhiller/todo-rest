@@ -2,17 +2,17 @@ package de.dhiller.todo.rest;
 
 public class TodoDTO {
 
-    private long id;
-    private boolean done;
+    private Long id;
+    private Boolean done;
     private String content;
 
     public TodoDTO() {}
 
-    public long getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(long id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
@@ -20,11 +20,11 @@ public class TodoDTO {
         return content;
     }
 
-    public void setDone(boolean done) {
+    public void setDone(Boolean done) {
         this.done = done;
     }
 
-    public boolean isDone() {
+    public Boolean isDone() {
         return done;
     }
 
