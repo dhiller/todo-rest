@@ -18,7 +18,7 @@ import static java.util.Optional.ofNullable;
 @RestController
 public class TodoController {
 
-    public static final Pattern MATCH_ALL_PATTERN = Pattern.compile(".*");
+    private static final Pattern MATCH_ALL_PATTERN = Pattern.compile(".*");
 
     private static final Logger log = LoggerFactory.getLogger(TodoController.class);
 
@@ -29,14 +29,12 @@ public class TodoController {
     private AuthenticationProvider authenticationProvider;
 
     @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
     private TodoRepository todoRepository;
 
     @GetMapping("/todos")
     @ResponseBody
-    public List<TodoDTO> listTodos(@RequestParam(value = "auth", required = false)  String token, @RequestBody(required = false) TodoDTO filter) {
+    public List<TodoDTO> listTodos(@RequestParam(value = "auth", required = false) String token,
+                                   @RequestBody(required = false) TodoDTO filter) {
         Pattern filterPattern = ofNullable(filter).filter(f -> f.getContent() != null)
                 .map(f -> Pattern.compile(f.getContent()))
                 .orElse(MATCH_ALL_PATTERN);

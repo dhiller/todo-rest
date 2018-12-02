@@ -22,18 +22,17 @@ public class AuthenticationProvider {
     private final BiMap<String, String> userToAuthenticationToken = HashBiMap.create();
 
     public String authenticate(String username, String password) {
-        String hashedPassword = Hashing.sha256().hashString(password, Charsets.UTF_8).toString();
         userRepository.findByUsername(username)
                 .stream()
                 .filter(u -> u.getPassword().equals(Hashing.sha256().hashString(password + u.getSalt(), Charsets.UTF_8).toString()))
                 .findAny()
-                .orElseThrow(() -> new UserNotFoundException());
+                .orElseThrow(UserNotFoundException::new);
         return userToAuthenticationToken.computeIfAbsent(username, (u) -> UUID.randomUUID().toString());
     }
 
     public User authorize(String token) {
-        String username = ofNullable(userToAuthenticationToken.inverse().get(token)).orElseThrow(() -> new UserUnauthorizedException());
-        return userRepository.findByUsername(username).stream().findAny().orElseThrow(() -> new UserNotFoundException());
+        String username = ofNullable(userToAuthenticationToken.inverse().get(token)).orElseThrow(UserUnauthorizedException::new);
+        return userRepository.findByUsername(username).stream().findAny().orElseThrow(UserNotFoundException::new);
     }
 
 }
