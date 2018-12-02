@@ -14,22 +14,40 @@
 
 ## How to run the service
 
-To build and run the service directly from the command line
+To build and run the service directly execute the following command:
 
 ```bash
 $ gradle bootRun
 ```
     
-To build the jar file including all dependencies 
+To build the jar file including all dependencies execute the following command: 
 
 ```bash
-$ gradle build
+$ gradle clean build
+executing gradlew instead of gradle
+...
+> Task :test
+...
+BUILD SUCCESSFUL in 1m 2s
+6 actionable tasks: 6 executed
 ```
     
-To run the jar file
+To run the jar file execute the following command:
 
 ```bash
 $ java -jar build/libs/todo-rest-0.1.0.jar
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::        (v2.0.5.RELEASE)
+2018-12-02 22:35:13.901  INFO 35436 --- [           main] de.dhiller.todo.Application              : Starting Application ...
+...
+2018-12-02 22:35:25.779  INFO 35436 --- [           main] de.dhiller.todo.Application              : Started Application in 18.039 seconds (JVM running for 18.938)
+
 ```
 
 ## Example usage
@@ -48,7 +66,7 @@ mockserver -serverPort 8081
 ### Create authentication token
 
 In general a client first has to authenticate against the service, after which she receives an authentication
-token that must be provided to any endpoint provided.
+token that must be provided to any endpoint available.
 
 ```bash
 $ TOKEN=$(curl -d '' 'http://localhost:8080/authenticate?username=jdoe&password=mys3cr3t')
@@ -57,8 +75,8 @@ $ TOKEN=$(curl -d '' 'http://localhost:8080/authenticate?username=jdoe&password=
 
 ### Add a remote watch
 
-To be notified of changes for own todo items, a client can register a callback url that will be called, should
-a todo item be changed.
+To be notified of changes for own todo items, a client can register a callback url that will be called if
+a todo item is changed.
 
 ```bash
 curl -s -XPUT -d '{"endpoint":"http://localhost:8081/todoItemUpdate"}' \
@@ -66,7 +84,7 @@ curl -s -XPUT -d '{"endpoint":"http://localhost:8081/todoItemUpdate"}' \
     "http://localhost:8080/updates?auth=$TOKEN"
 ```
 
-The service will then PUT updates against the registered update endpoint transmitting the new state, which would be 
+The service will then PUT updates against the registered update endpoint transmitting the new state, being
 equivalent to this curl request:
 
 ```bash
