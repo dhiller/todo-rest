@@ -6,6 +6,12 @@ public class UpdateReceiverDTO {
 
     private URI endpoint;
 
+    public UpdateReceiverDTO() {}
+
+    public UpdateReceiverDTO(URI endpoint) {
+        this.endpoint = endpoint;
+    }
+
     public URI getEndpoint() {
         return endpoint;
     }

@@ -33,6 +33,7 @@ dependencies {
     compile("com.h2database:h2")
     // workaround for java 11, see https://github.com/spring-projects/spring-boot/issues/14610
     compile 'org.javassist:javassist:3.23.1-GA'
+    testCompile 'org.mock-server:mockserver-netty:5.5.0'
     testCompile('org.springframework.boot:spring-boot-starter-test')
     testCompile('com.jayway.jsonpath:json-path')
 }

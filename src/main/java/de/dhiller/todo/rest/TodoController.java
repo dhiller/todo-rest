@@ -2,18 +2,19 @@ package de.dhiller.todo.rest;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import de.dhiller.todo.persistence.Todo;
-import de.dhiller.todo.persistence.TodoRepository;
-import de.dhiller.todo.persistence.User;
-import de.dhiller.todo.persistence.UserRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import de.dhiller.todo.persistence.*;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
 
 import static java.util.Optional.ofNullable;
 
@@ -24,6 +25,8 @@ public class TodoController {
 
     private static final Logger log = LoggerFactory.getLogger(TodoController.class);
 
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
     @Autowired
     private ModelMapper modelMapper;
 
@@ -32,6 +35,11 @@ public class TodoController {
 
     @Autowired
     private TodoRepository todoRepository;
+
+    @Autowired
+    private UpdateReceiverRepository updateReceiverRepository;
+
+    private RestTemplate restTemplate = new RestTemplateBuilder().setConnectTimeout(10000).build();
 
     @GetMapping("/todos")
     public List<TodoDTO> listTodos(@RequestParam(value = "auth", required = false) String token,
@@ -50,13 +58,19 @@ public class TodoController {
     public void updateTodo(@RequestParam(value = "auth", required = false) String token,
                            @PathVariable(value="id") long id,
                            @RequestBody(required = false) TodoDTO update) {
-        User authorizedUser = authenticationProvider.authorize(token);
+        final User authorizedUser = authenticationProvider.authorize(token);
         Todo todoToUpdate = getTodoByIdOrThrowNotFound(id);
         if(!authorizedUser.equals(todoToUpdate.getUser()))
             throw new TodoNotFoundException();
         todoToUpdate.setContent(update.getContent());
         todoToUpdate.setDone(update.isDone());
+        final TodoDTO afterUpdate = modelMapper.map(todoToUpdate, TodoDTO.class);
         todoRepository.save(todoToUpdate);
+        new Thread(() -> {
+            updateReceiverRepository.findByUser(authorizedUser).forEach(
+                   updateReceiver -> restTemplate.put(updateReceiver.getEndpoint(), afterUpdate)
+            );
+        }).run();
     }
 
     @GetMapping("/todos/{id}")
